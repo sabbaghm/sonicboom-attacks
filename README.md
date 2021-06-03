@@ -29,7 +29,7 @@ The following attacks are implemented in this repo.
 To build you need to run `make`
 
 # Running the Tests
-This builds linux binaries that run on the SonicBOOM machine specified above. Binaries are located in `bin` folder and the disassembled programs are located in `dump` folder.
+This builds linux binaries that run on the SonicBOOM machine specified above. Binaries are located in the `bin` folder and the assembly programs are located in the `dump` folder.
 
 # References
 [1] P. Kocher, D. Genkin, D. Gruss, W. Haas, M. Hamburg, M. Lipp, S. Mangard, T. Prescher, M. Schwarz, and Y. Yarom, “Spectre attacks: Exploiting speculative execution,” ArXiv e-prints, Jan. 2018
