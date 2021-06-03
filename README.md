@@ -34,6 +34,7 @@ This builds linux binaries that run on the SonicBOOM machine specified above. Bi
 # Citation
 If you use SonicBOOM attacks in your published work, please cite it as:
 
+```
 @article{sabbaghsboomattacks,
   title={Secure Speculative Execution via RISC-V Open Hardware Design},
   author={Sabbagh, Majid and Fei, Yunsi and Kaeli, David},
@@ -41,6 +42,7 @@ If you use SonicBOOM attacks in your published work, please cite it as:
   year={2021},
   month={June}
 }
+```
 
 # References
 [1] P. Kocher, D. Genkin, D. Gruss, W. Haas, M. Hamburg, M. Lipp, S. Mangard, T. Prescher, M. Schwarz, and Y. Yarom, “Spectre attacks: Exploiting speculative execution,” ArXiv e-prints, Jan. 2018
