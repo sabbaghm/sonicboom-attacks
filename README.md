@@ -31,6 +31,17 @@ To build you need to run `make`
 # Running the Tests
 This builds linux binaries that run on the SonicBOOM machine specified above. Binaries are located in the `bin` folder and the assembly programs are located in the `dump` folder.
 
+# Citation
+If you use SonicBOOM attacks in your published work, please cite it as:
+
+@article{sabbaghsboomattacks,
+  title={Secure Speculative Execution via RISC-V Open Hardware Design},
+  author={Sabbagh, Majid and Fei, Yunsi and Kaeli, David},
+  booktitle={Fifth Workshop on Computer Architecture Research with RISC-V},
+  year={2021},
+  month={June}
+}
+
 # References
 [1] P. Kocher, D. Genkin, D. Gruss, W. Haas, M. Hamburg, M. Lipp, S. Mangard, T. Prescher, M. Schwarz, and Y. Yarom, “Spectre attacks: Exploiting speculative execution,” ArXiv e-prints, Jan. 2018
 
