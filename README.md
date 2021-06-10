@@ -1,9 +1,8 @@
 # SonicBOOM Spectre Attacks
 This repository holds all code used to check if SonicBOOM is susceptible to Spectre attacks. These attacks are implemented based on the [boom-attacks](https://github.com/riscv-boom/boom-attacks).
 
-# Further Details
 ## BOOM Configuration
-This is working with the version of SonicBOOM located at [this commit](https://github.com/riscv-boom/riscv-boom/commit/e252e797c21aa3bf860cb9d67c6009ef00c5916f). We tested the *Small* and *Medium* core configurations.
+This is working with the version of SonicBOOM located at [this commit](https://github.com/riscv-boom/riscv-boom/commit/e252e797c21aa3bf860cb9d67c6009ef00c5916f). We tested *Small* and *Medium* core configurations.
 
 ## Test platform
 * Xilinx Vivado block designs for FPGA RISC-V SoC running Debian Linux distro from [this repository](https://github.com/eugene-tarassov/vivado-risc-v).
@@ -16,7 +15,7 @@ This is working with the version of SonicBOOM located at [this commit](https://g
   * 2-wide, 3-issue, 16KB D$ (2 MSHRs), 16KB I$, 512KB L2$
 
 ## Implemented Attacks
-The following attacks are implemented in this repo.
+The following attacks are implemented in this repository:
 
 * Spectre-v1 or Bounds Check Bypass [1]
     * condBranchMispred.c
@@ -29,7 +28,7 @@ The following attacks are implemented in this repo.
 To build you need to run `make`
 
 # Running the Tests
-This builds linux binaries that run on the SonicBOOM machine specified above. Binaries are located in the `bin` folder and the assembly programs are located in the `dump` folder.
+Running `make` builds linux binaries that run on the SonicBOOM machine. Binaries are located in the `bin` folder and the assembly programs are located in the `dump` folder.
 
 # Citation
 If you use SonicBOOM attacks in your published work, please cite it as:
