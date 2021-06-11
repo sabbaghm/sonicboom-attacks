@@ -25,10 +25,13 @@ The following attacks are implemented in this repository:
     * returnStackBuffer.c
 
 # Building the tests
-To build you need to run `make`
+To build binaries and generate assembly codes you need to run `make all`. Note, `make bin` only creates binaries.
+
+### Build for Verilator simulation
+To build binaries and generate assembly codes for the Verilator simulation you need to run `make allrv`. Verilator elevates the CHISEL/Verilog codes to C++ to perform a "software" RTL simulation. We used Verilator v4.034 as part of the [*Chipyard*](https://chipyard.readthedocs.io/en/latest/Chipyard-Basics/Initial-Repo-Setup.html#initial-repository-setup) framework. Note, `make binrv` only creates binaries.
 
 # Running the Tests
-Running `make` builds linux binaries that run on the SonicBOOM machine. Binaries are located in the `bin` folder and the assembly programs are located in the `dump` folder.
+Running `make all` (`make allrv`) builds linux binaries that run on the SonicBOOM machine. Binaries are located in the `bin` (`binrv`) folder and the assembly programs are located in the `dump` (`dumprv`) folder.
 
 # Citation
 If you use SonicBOOM attacks in your published work, please cite it as:
