@@ -3,8 +3,9 @@
 
 frameDump:
     # Pop off stack frame and get RA
-    ld ra, 56(sp)
-    addi sp, sp, 64
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    addi sp, sp, 48
 
     # Calculate ra - 2 + (( 2 << 4 ) / 16)
     # This stalls the result of ra to be used for the ret
